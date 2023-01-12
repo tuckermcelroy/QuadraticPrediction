@@ -1,9 +1,8 @@
-## Script for Quadratic Prediction Project
+## Script for "Quadratic Prediction of Time Series via Auto-Cumulants"
 
-setwd("C:\\Users\\neide\\OneDrive\\Documents\\Research\\NonlinearPred")
+setwd("C:\\Users\\neide\\OneDrive\\Documents\\GitHub\\QuadraticPrediction")
 
-#source("ARMAauto.r")
-#source("getGCD.r")
+source("ARMAauto.r")
 source("quad.pred.r")
 source("quad.cast.r")
 source("mom.normal.r")
@@ -11,8 +10,9 @@ source("mom.lognormal.r")
 source("mom.sqrtnormal.r")
 source("mom.nonparam.r")
 source("mom.mc.r")
-#source("garch.sim.r")
+source("garch.sim.r")
 
+rexp.ctr <- function(n) { return(rexp(n)-1) }
 
 ##################################################################
 ##  nonparametric estimation of automoments 
@@ -35,6 +35,7 @@ moms <- mom.nonparam(x,horz)
 #####################################################
 ## computation of automoments for an asymmetric GARCH(1,1) process
 
+horz <- 5
 monte <- 10^3
 alpha <- c(.3,.4)
 x.sims <- NULL
@@ -44,14 +45,14 @@ for(i in 1:monte)
   x.sims <- cbind(x.sims,x.sim)
 }
 
-out <- mom.mc(x.sims,5)
+out <- mom.mc(x.sims,horz)
 
 ###########################################################
 ## computation of automoments for a lognormal process
 
-T <- 5
+P <- 5
 H <- 1
-horz <- T+H
+horz <- P+H
 lags <- seq(0,horz-1)
 lags <- c(-rev(lags),lags[-1])
 
@@ -73,15 +74,15 @@ sigma <- .5
 gamma <- ARMAauto(c(phi1,phi2),NULL,(2*horz))*sigma^2
 
 moms <- mom.lognormal(gamma)
-
+mu <- moms[[1]]
 
 ###########################################################
 ## computation of automoments for a gaussian-chisquare process
 # higher values of alpha weight Gaussian part more, alpha=0 is pure chi-square
 
-T <- 5
+P <- 5
 H <- 1
-horz <- T+H
+horz <- P+H
 lags <- seq(0,horz-1)
 lags <- c(-rev(lags),lags[-1])
 
@@ -121,9 +122,9 @@ moms <- mom.sqrtnormal(gamma,alpha)
 
 ######################################################
 ##  quadratic prediction for h-step ahead forecasting
-#	requires mom2, mom3, mom4 up to lag T+H-1
+#	requires mom2, mom3, mom4 up to lag P+H-1
 
-output <- quad.pred(T,H,moms)
+output <- quad.pred(P,H,moms)
 mses <- output[[1]]
 quad.coef <- output[[2]]
 lin.coef <- output[[3]]
@@ -133,18 +134,19 @@ print(mses[2]/mses[1])
 
 ## construct forecast 
 
+
 # lognormal case simulation
-z.lognormal <- t(chol(quad.mat)) %*% rnorm(T)
+z.lognormal <- t(chol(quad.mat)) %*% rnorm(P)
 x.lognormal <- exp(z.lognormal) - mu
 data <- x.lognormal
 
 # quadratic hermite case simulation
-z.hermite <- t(chol(quad.mat)) %*% rnorm(T)
+z.hermite <- t(chol(quad.mat)) %*% rnorm(P)
 x.hermite <- alpha*z.hermite + (z.hermite^2 - 1)
 data <- x.hermite
 
 # forecast and plots
-forecast <- quad.cast(data,T,H,moms)
+forecast <- quad.cast(data,P,H,moms)
 plot(ts(c(data,forecast),start=1990,frequency=1),col=2,lty=1,ylab="",xlab="",lwd=2)
 lines(ts(c(data,NA),start=1990,frequency=1),lwd=2)
 
@@ -190,9 +192,9 @@ ar.roots <- polyroot(ar.poly)
 Mod(ar.roots)
 2*pi/Arg(ar.roots)
 
-T <- p.hat
+P <- p.hat
 H <- 1
-horz <- T+H
+horz <- P+H
 gamma <- ARMAauto(phi.ar,NULL,(2*horz))*sig2[1,1]
 rho <- gamma/gamma[1]
 
@@ -200,15 +202,15 @@ moms <- mom.sqrtnormal(rho,2*mu/sig)
 
 ### nonparametric
 
-T <- 30
+P <- 30
 H <- 1
-horz <- T+H
+horz <- P+H
 moms <- mom.nonparam(wolfer.raw,horz)
 
 
 ## get results
 
-output <- quad.pred(T,H,moms)
+output <- quad.pred(P,H,moms)
 mses <- output[[1]]
 quad.coef <- output[[2]]
 lin.coef <- output[[3]]
@@ -216,7 +218,7 @@ quad.mat <- output[[4]]
 print(mses[2]/mses[1])
 
 # forecast and plots
-forecast <- quad.cast(wolfer.raw,T,H,moms)
+forecast <- quad.cast(wolfer.raw,P,H,moms)
 plot(ts(c(wolfer.raw,forecast),start=1749,frequency=12),col=2,lty=1,ylab="",xlab="",lwd=2)
 lines(ts(c(wolfer.raw,NA),start=1749,frequency=12),lwd=2)
 
