@@ -1,29 +1,24 @@
 ## Script for "Prediction for Second Order Forecastable Processes"
 
+library(xtable)
+
 setwd("C:\\Users\\neide\\OneDrive\\Documents\\GitHub\\QuadraticPrediction")
 
-source("ARMAauto.r")
-source("quad.pred.r")
-source("quad.cast.r")
-source("mom.normal.r")
-source("mom.lognormal.r")
-source("mom.sqrtnormal.r")
-source("mom.nonparam.r")
-source("mom.mc.r")
-#source("garch.sim.r")
 source("specFactmvar.r")
 source("polymult.r")
 
 ## Compute quadratic filter for signal+noise process
 
 # stdev of Gaussian white noise
-tau <- 0
+#tau <- 0
+#tau <- 1
+tau <- 2
 # moments of centered degree 1 chi square 
 mu2 <- 2
 mu3 <- 8
 mu4 <- 48
 # moving average parameter
-theta <- .8
+theta <- -.8
 
 ## compute new parameters
 rho1 <- mu2*theta/(mu2*(1+theta^2)+tau^2)
@@ -79,19 +74,16 @@ sigma.vma <- factor[[2]]
 print(sigma.vma[1,1]/sigma2)
 
 ## filter coefficients
-trunc <- 15
+trunc <- 20
 coeff <- theta.vma[,,2]
-quad.filter <- array(0,c(trunc+1,N))
+quad.filter <- matrix(0,nrow=trunc+1,ncol=N)
 quad.filter[1,] <- coeff[1,]
 for(j in 1:trunc)
 {
   coeff <- -1*theta.vma[,,2] %*% coeff
   quad.filter[j+1,] <- coeff[1,]
 }
-print(round(quad.filter,digits=4))
+rownames(quad.filter) <- seq(0,trunc)
+print(xtable(quad.filter,digits=4))
       
 
-
-## SCRAP
-
-factor <- specFactmvar(xAcf[-c(1,2),,-c(1,2)])
