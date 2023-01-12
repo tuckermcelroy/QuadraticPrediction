@@ -15,7 +15,7 @@
 #' @export
 #'
 
-specFactmvar <- function(xAcf)
+specFactmvar <- function(xAcf,loud=FALSE)
 {
 
 	##########################################################################
@@ -56,6 +56,7 @@ specFactmvar <- function(xAcf)
 	#			dimension N x (q+1) x N, where xAcf[,1,] corresponds
 	#			to the zeroth coefficient matrix, xAcf[,2,] is the first
 	#			coefficient matrix, etc.
+  #   loud: set TRUE if progress output is desired
 	#	Outputs:
 	#		theta: the spectral factorization as a list object
 	#			theta[[1]] is an array of dimension N x N x (q+1),
@@ -95,7 +96,7 @@ specFactmvar <- function(xAcf)
 		count <- count+1
 		if(count > q) eps <- sum((oldLam - Lam)^2)
 		oldLam <- Lam
-		print(c(count,eps))
+		if(loud) { print(c(count,eps)) }
 #		print(Lam)
 	}
 	Thetas <- cbind(Bseq,sqrtLam) %*% (diag(count) %x% solve(sqrtLam))
